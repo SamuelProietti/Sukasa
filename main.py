@@ -48,8 +48,9 @@ def search_google_maps(query, location="Poblenou, Barcelona, Spain"):
         else:
             return f"Google returned no places. Raw data: {data}"
             
-  except Exception as e:
+    except Exception as e:
         return f"Error connecting to Maps: {e}"
+        
 
 # ==========================================
 # APP UI SETUP 
