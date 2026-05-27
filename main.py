@@ -60,11 +60,11 @@ st.set_page_config(page_title="Sukasa Host", page_icon="logo.png")
 st.logo("logo.png") 
 
 # 2. The Main Page Banner 
-col1, col2 = st.columns([1.5, 8]) # We widened the first column slightly
+col1, col2 = st.columns([2, 8]) # Widened the column so the image fits
 with col1:
-    st.image("logo.png", width=130) # More than doubled the size!
+    st.image("logo.png", width=180) # Bumped up from 130!
 with col2:
-    st.title("Your Digital Host")
+    st.title("Your Digital Host") # Clean, no redundancy
 
 st.markdown("""
 👋 **Bon dia! Mi casa es Sukasa.**
