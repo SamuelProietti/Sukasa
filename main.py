@@ -64,7 +64,7 @@ col1, col2 = st.columns([1.5, 8]) # We widened the first column slightly
 with col1:
     st.image("logo.png", width=130) # More than doubled the size!
 with col2:
-    st.title("Sukasa: Your Digital Host")
+    st.title("Your Digital Host")
 
 st.markdown("""
 👋 **Bon dia! Mi casa es Sukasa.**
