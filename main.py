@@ -50,16 +50,21 @@ def search_google_maps(query, location="Poblenou, Barcelona, Spain"):
             
     except Exception as e:
         return f"Error connecting to Maps: {e}"
-        
+
 
 # ==========================================
 # APP UI SETUP 
 # ==========================================
-# 1. The Browser Tab (House icon!)
-st.set_page_config(page_title="Sukasa Host", page_icon="🏡")
+# 1. The Browser Tab & Top Left Logo
+st.set_page_config(page_title="Sukasa Host", page_icon="logo.png")
+st.logo("logo.png") 
 
-# 2. The Main Page Banner (Full branding!)
-st.title("🌊🏡 Sukasa: Your Digital Host")
+# 2. The Main Page Banner 
+col1, col2 = st.columns([1, 8])
+with col1:
+    st.image("logo.png", width=60)
+with col2:
+    st.title("Sukasa: Your Digital Host")
 
 st.markdown("""
 👋 **Bon dia! Mi casa es Sukasa.**
