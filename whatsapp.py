@@ -85,6 +85,11 @@ def load_personality():
     except Exception:
         return "You are Sukasa, a helpful Smart Host in Barcelona."
 
+# Render Health Check Front Door
+@app.route('/', methods=['GET'])
+def health_check():
+    return "Sukasa Bot is alive and running!", 200
+    
 # --- 4. THE WHATSAPP WEBHOOK ---
 @app.route('/whatsapp', methods=['POST'])
 def whatsapp_reply():
