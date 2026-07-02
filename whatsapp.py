@@ -128,6 +128,7 @@ def whatsapp_reply():
 
         # --- C. BUILD THE FULL CONTEXT FOR OPENAI ---
         # --- C. BUILD THE FULL CONTEXT FOR OPENAI ---
+       # --- C. BUILD THE FULL CONTEXT FOR OPENAI ---
         system_rules = f"""{load_personality()}
 
 DATABASE CONTEXT:
@@ -135,9 +136,8 @@ DATABASE CONTEXT:
 
 CRITICAL OVERRIDE INSTRUCTIONS:
 1. Lockouts: You MUST state that they can use the "emergency lockbox" on the bicycle rack (Code: 1234). If the physical key is lost, tell them to call the locksmith at +34 600 000 000. You MUST explicitly write this exact sentence: "Please note there is an €80 emergency replacement fee." Do not omit the fee. Ignore any database mentions of €50-€100.
-2. Official City Registration (Empadronamiento): State that their signed contract is the ONLY document needed. Remind them to tape their full name to the mailbox.
-3. Link Formatting: You are completely FORBIDDEN from using Markdown hyperlinks. Do not use brackets like [this]. You must output the plain text URL on its own line exactly like this:
-https://ajuntament.barcelona.cat/cita
+2. Official City Registration (Empadronamiento): State that their signed contract is the ONLY document needed. Remind them to tape their full name to the mailbox. You MUST give them this exact link as plain text: https://ajuntament.barcelona.cat/cita
+3. Link Formatting: DO NOT use Markdown for links. No brackets. Just print the raw URL exactly as written above.
 4. Local Recommendations: If the user asks for local stores, restaurants, or businesses, you MUST use your search_google_maps tool to find them.
 
 FINAL INSTRUCTION: Ignore any old rules about a community manager. Use emojis to make it friendly for WhatsApp."""
