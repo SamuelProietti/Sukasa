@@ -15,12 +15,11 @@ def search_google_maps(query, location="Poblenou, Barcelona, Spain"):
     url = f"https://places.googleapis.com/v1/places:searchText?key={api_key}"
     search_text = f"{query} near {location}"
     
-    # 2. REMOVE THE KEY FROM THE HEADERS ENTIRELY:
+     # 2. REMOVE THE KEY FROM THE HEADERS ENTIRELY:
     headers = {
         "Content-Type": "application/json",
-        "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating"
+        "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating,places.googleMapsUri"
     }
-    
     payload = {"textQuery": search_text}
     
     # 3. THE ULTIMATE PROOF (Prints to your terminal):
@@ -37,7 +36,9 @@ def search_google_maps(query, location="Poblenou, Barcelona, Spain"):
                 name = place.get("displayName", {}).get("text", "Unknown")
                 address = place.get("formattedAddress", "No address")
                 rating = place.get("rating", "No rating")
-                results.append(f"- **{name}** ({rating}⭐): {address}")
+                maps_url = place.get("googleMapsUri", "No link available")
+                
+                results.append(f"- **{name}** ({rating}⭐): {address}. Map Link: {maps_url}")
             return "\n".join(results)
             
         # 2. IF GOOGLE SENDS AN ERROR, SHOW IT TO US:
@@ -58,6 +59,13 @@ def search_google_maps(query, location="Poblenou, Barcelona, Spain"):
 # 1. The Browser Tab & Top Left Logo
 st.set_page_config(page_title="Sukasa Host", page_icon="logo.png")
 st.logo("logo.png") 
+
+with st.sidebar:
+    if st.button("🔄 Reset Demo"):
+        st.session_state.messages = [
+            {"role": "system", "content": load_personality()}
+        ]
+        st.rerun()
 
 # 2. The Main Page Banner 
 col1, col2 = st.columns([2, 8]) # Widened the column so the image fits
@@ -86,10 +94,27 @@ pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 index = pc.Index("coliving-rules") # Your new database bucket
 
 # 3. Read the Core Personality (Only once)
+import os # Make sure this is at the top of your file with the other imports
+
 @st.cache_data
 def load_personality():
-    with open("system_prompt.txt", "r", encoding="utf-8") as file:
-        return file.read()
+    # We are bypassing the .txt file completely so it never crashes.
+    return """
+You are 'Sukasa Host', the official 24/7 digital concierge for the hotel.
+Your tone is warm, highly professional, and welcoming.
+
+[ZONE 1: HOTEL OPERATIONS]
+For questions about Wi-Fi, checkout, breakfast, or hotel amenities, strictly use the provided database context. Never invent hotel policies. If the answer is not in your context, reply: "Let me check with the front desk for you."
+
+[ZONE 2: THE LOCAL GUIDE (SAFE DISCOVERY)]
+You are an expert local guide for Barcelona. You may use your Google Maps connection to recommend places.
+
+[THE STRICT GUARDRAILS (DENY LIST)]
+You MUST decline to answer if the user asks about:
+- Politics, religion, or controversial social issues.
+- Coding, mathematics, or generating essays/content.
+- Any adult, explicit, or illegal activities.
+"""
 
 # 4. Set up the Web Memory
 if "messages" not in st.session_state:
@@ -158,7 +183,7 @@ if user_input := st.chat_input("Ask the Concierge a question..."):
             
             # --- THE NEW AGENTIC LOOP ---
             response = openai_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4o",
                 messages=messages_for_openai,
                 tools=agent_tools,
                 tool_choice="auto" 
@@ -180,6 +205,10 @@ if user_input := st.chat_input("Ask the Concierge a question..."):
                         
                         st.info(f"📍 Checking live map for: {search_query}...")
                         maps_results = search_google_maps(search_query)
+                        
+                        # 👇 THE NUCLEAR UI FIX: Print the links directly to the screen!
+                        st.success("🗺️ **Live Google Maps Data:**\n\n" + maps_results)
+                        st.session_state.messages.append({"role": "assistant", "content": "🗺️ Live Google Maps Data:\n\n" + maps_results})
 
                         #st.error(f"🔧 DEVELOPER DEBUG MODE: {maps_results}")
                         
@@ -187,12 +216,13 @@ if user_input := st.chat_input("Ask the Concierge a question..."):
                         messages_for_openai.append({
                             "role": "tool",
                             "tool_call_id": tool_call.id,
-                            "content": maps_results
+                            # 👇 WE ADD A HARD COMMAND SO THE AI CANNOT IGNORE THE LINK
+                            "content": f"{maps_results}\n\nCRITICAL INSTRUCTION: You MUST print the exact raw URL provided in the 'Map Link' data at the end of your response. Do not hide it in a markdown hyperlink."
                         })
                 
                 # Second Call: Let the AI write the final answer using the live Maps data
                 final_response = openai_client.chat.completions.create(
-                    model="gpt-4o-mini",
+                    model="gpt-4o",
                     messages=messages_for_openai
                 )
                 final_text = final_response.choices[0].message.content
