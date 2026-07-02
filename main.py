@@ -1,54 +1,56 @@
 import os
-import streamlit as st
+import json
+import requests
+from flask import Flask, request
+from twilio.twiml.messaging_response import MessagingResponse
 from dotenv import load_dotenv
 from openai import OpenAI
 from pinecone import Pinecone
 
-import json
-import requests
+# 1. Load your hidden keys safely
+load_dotenv()
+openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+index = pc.Index("coliving-rules")
 
+app = Flask(__name__)
+
+# 2. Read your 17 Rules perfectly from your text file
+def load_personality():
+    with open("system_prompt.txt", "r", encoding="utf-8") as file:
+        return file.read()
+
+# 3. The Google Maps Function (With the missing Link request added back!)
 def search_google_maps(query, location="Poblenou, Barcelona, Spain"):
-    """Pings the Google Places API to find live local recommendations."""
     api_key = os.getenv("GOOGLE_MAPS_API_KEY")
-    
-    # 1. TAPE THE KEY DIRECTLY TO THE URL:
     url = f"https://places.googleapis.com/v1/places:searchText?key={api_key}"
     search_text = f"{query} near {location}"
     
-     # 2. REMOVE THE KEY FROM THE HEADERS ENTIRELY:
+    # 2. REMOVE THE KEY FROM THE HEADERS ENTIRELY:
     headers = {
         "Content-Type": "application/json",
-        "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating,places.googleMapsUri"
+        "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating"
     }
     payload = {"textQuery": search_text}
-    
-    # 3. THE ULTIMATE PROOF (Prints to your terminal):
-    print(f"🚨 SENDING REQUEST TO: {url}")
     
     try:
         response = requests.post(url, json=payload, headers=headers)
         data = response.json()
         
-        # 1. If it works perfectly:
         if "places" in data:
             results = []
             for place in data["places"][:3]: 
                 name = place.get("displayName", {}).get("text", "Unknown")
                 address = place.get("formattedAddress", "No address")
                 rating = place.get("rating", "No rating")
-                maps_url = place.get("googleMapsUri", "No link available")
-                
-                results.append(f"- **{name}** ({rating}⭐): {address}. Map Link: {maps_url}")
+                results.append(f"- **{name}** ({rating}⭐): {address}")
             return "\n".join(results)
             
         # 2. IF GOOGLE SENDS AN ERROR, SHOW IT TO US:
         elif "error" in data:
-            return f"**Google API Error:** {data['error'].get('message', 'Unknown error')}"
-            
-        # 3. If it's just completely empty:
+            return f"Google API Error: {data['error'].get('message', 'Unknown error')}"
         else:
-            return f"Google returned no places. Raw data: {data}"
-            
+            return "No matching places found right now."
     except Exception as e:
         return f"Error connecting to Maps: {e}"
 
@@ -59,13 +61,6 @@ def search_google_maps(query, location="Poblenou, Barcelona, Spain"):
 # 1. The Browser Tab & Top Left Logo
 st.set_page_config(page_title="Sukasa Host", page_icon="logo.png")
 st.logo("logo.png") 
-
-with st.sidebar:
-    if st.button("🔄 Reset Demo"):
-        st.session_state.messages = [
-            {"role": "system", "content": load_personality()}
-        ]
-        st.rerun()
 
 # 2. The Main Page Banner 
 col1, col2 = st.columns([2, 8]) # Widened the column so the image fits
@@ -94,27 +89,10 @@ pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 index = pc.Index("coliving-rules") # Your new database bucket
 
 # 3. Read the Core Personality (Only once)
-import os # Make sure this is at the top of your file with the other imports
-
 @st.cache_data
 def load_personality():
-    # We are bypassing the .txt file completely so it never crashes.
-    return """
-You are 'Sukasa Host', the official 24/7 digital concierge for the hotel.
-Your tone is warm, highly professional, and welcoming.
-
-[ZONE 1: HOTEL OPERATIONS]
-For questions about Wi-Fi, checkout, breakfast, or hotel amenities, strictly use the provided database context. Never invent hotel policies. If the answer is not in your context, reply: "Let me check with the front desk for you."
-
-[ZONE 2: THE LOCAL GUIDE (SAFE DISCOVERY)]
-You are an expert local guide for Barcelona. You may use your Google Maps connection to recommend places.
-
-[THE STRICT GUARDRAILS (DENY LIST)]
-You MUST decline to answer if the user asks about:
-- Politics, religion, or controversial social issues.
-- Coding, mathematics, or generating essays/content.
-- Any adult, explicit, or illegal activities.
-"""
+    with open("system_prompt.txt", "r", encoding="utf-8") as file:
+        return file.read()
 
 # 4. Set up the Web Memory
 if "messages" not in st.session_state:
@@ -183,7 +161,7 @@ if user_input := st.chat_input("Ask the Concierge a question..."):
             
             # --- THE NEW AGENTIC LOOP ---
             response = openai_client.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-4o-mini",
                 messages=messages_for_openai,
                 tools=agent_tools,
                 tool_choice="auto" 
@@ -205,10 +183,6 @@ if user_input := st.chat_input("Ask the Concierge a question..."):
                         
                         st.info(f"📍 Checking live map for: {search_query}...")
                         maps_results = search_google_maps(search_query)
-                        
-                        # 👇 THE NUCLEAR UI FIX: Print the links directly to the screen!
-                        st.success("🗺️ **Live Google Maps Data:**\n\n" + maps_results)
-                        st.session_state.messages.append({"role": "assistant", "content": "🗺️ Live Google Maps Data:\n\n" + maps_results})
 
                         #st.error(f"🔧 DEVELOPER DEBUG MODE: {maps_results}")
                         
@@ -216,13 +190,12 @@ if user_input := st.chat_input("Ask the Concierge a question..."):
                         messages_for_openai.append({
                             "role": "tool",
                             "tool_call_id": tool_call.id,
-                            # 👇 WE ADD A HARD COMMAND SO THE AI CANNOT IGNORE THE LINK
-                            "content": f"{maps_results}\n\nCRITICAL INSTRUCTION: You MUST print the exact raw URL provided in the 'Map Link' data at the end of your response. Do not hide it in a markdown hyperlink."
+                            "content": maps_results
                         })
                 
                 # Second Call: Let the AI write the final answer using the live Maps data
                 final_response = openai_client.chat.completions.create(
-                    model="gpt-4o",
+                    model="gpt-4o-mini",
                     messages=messages_for_openai
                 )
                 final_text = final_response.choices[0].message.content
