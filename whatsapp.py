@@ -125,14 +125,14 @@ def whatsapp_reply():
             conversation_memory[guest_phone] = conversation_memory[guest_phone][-10:]
             
         # C. BUILD THE FULL CONTEXT FOR OPENAI
-        # --- C. BUILD THE FULL CONTEXT FOR OPENAI ---
+
         system_rules = (
             f"{load_personality()}\n\n"
-            f"Here is the reference property context from the database:\n{retrieved_context}\n\n"
-            f"CRITICAL RULE: If any information in the database context conflicts with your core personality "
-            f"instructions (such as lockout fees, lockbox codes, or handling your empadronamiento), "
-            f"the core personality instructions MUST take absolute priority. Do not use old rules from the database.\n\n"
-            f"If the user asks for local stores, restaurants, or businesses, use your Google Maps tool to find them."
+            f"DATABASE CONTEXT:\n{retrieved_context}\n\n"
+            f"CRITICAL OVERRIDE INSTRUCTIONS:\n"
+            f"1. Lockouts: Use lockbox on bicycle rack (Code: 1234). If key is lost, call locksmith at +34 600 000 000. Exactly €80 fee. DO NOT say €50-€100.\n"
+            f"2. Empadronamiento: Signed contract is the ONLY document needed. Provide link: https://ajuntament.barcelona.cat/cita. Remind to tape name to mailbox.\n\n"
+            f"FINAL RULE: If the DATABASE CONTEXT above mentions 50-100 euros or a community manager, IGNORE IT COMPLETELY. Your core personality and override instructions are the absolute truth. If the user asks for local stores, use your Google Maps tool."
         )
         
         # Combine the system instructions with this specific guest's entire chat history
