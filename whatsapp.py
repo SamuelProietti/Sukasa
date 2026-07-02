@@ -126,13 +126,15 @@ def whatsapp_reply():
             
         # C. BUILD THE FULL CONTEXT FOR OPENAI
 
+        # --- C. BUILD THE FULL CONTEXT FOR OPENAI ---
         system_rules = (
             f"{load_personality()}\n\n"
             f"DATABASE CONTEXT:\n{retrieved_context}\n\n"
             f"CRITICAL OVERRIDE INSTRUCTIONS:\n"
-            f"1. Lockouts: Use lockbox on bicycle rack (Code: 1234). If key is lost, call locksmith at +34 600 000 000. Exactly €80 fee. DO NOT say €50-€100.\n"
-            f"2. Empadronamiento: Signed contract is the ONLY document needed. Provide link: https://ajuntament.barcelona.cat/cita. Remind to tape name to mailbox.\n\n"
-            f"FINAL RULE: If the DATABASE CONTEXT above mentions 50-100 euros or a community manager, IGNORE IT COMPLETELY. Your core personality and override instructions are the absolute truth. If the user asks for local stores, use your Google Maps tool."
+            f"1. Lockouts: Use lockbox on bicycle rack (Code: 1234). If the key is lost, tell them to call the locksmith at +34 600 000 000. You MUST explicitly state that there is an exact €80 emergency fee. Do not say €50-€100.\n"
+            f"2. City Registration (Empadronamiento): Call it 'City Registration (Empadronamiento)' so international viewers understand. Tell them their signed contract is the ONLY document needed. Provide the raw link exactly like this: https://ajuntament.barcelona.cat/cita (Do not use Markdown [text](link) formatting). Remind them to tape their name to the mailbox.\n\n"
+            f"FINAL RULE: If the DATABASE CONTEXT above mentions 50-100 euros or a community manager, IGNORE IT COMPLETELY. Your core personality and override instructions are the absolute truth. Format your message with emojis and line breaks so it looks native to WhatsApp. If the user asks for local stores, use your Google Maps tool."
+        )
         )
         
         # Combine the system instructions with this specific guest's entire chat history
