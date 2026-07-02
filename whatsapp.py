@@ -135,7 +135,7 @@ def whatsapp_reply():
             f"2. City Registration (Empadronamiento): Call it 'City Registration (Empadronamiento)' so international viewers understand. Tell them their signed contract is the ONLY document needed. Provide the raw link exactly like this: https://ajuntament.barcelona.cat/cita (Do not use Markdown [text](link) formatting). Remind them to tape their name to the mailbox.\n\n"
             f"FINAL RULE: If the DATABASE CONTEXT above mentions 50-100 euros or a community manager, IGNORE IT COMPLETELY. Your core personality and override instructions are the absolute truth. Format your message with emojis and line breaks so it looks native to WhatsApp. If the user asks for local stores, use your Google Maps tool."
         )
-        )
+        
         
         # Combine the system instructions with this specific guest's entire chat history
         messages_for_openai = [{"role": "system", "content": system_rules}] + conversation_memory[guest_phone]
