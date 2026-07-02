@@ -127,15 +127,21 @@ def whatsapp_reply():
         # C. BUILD THE FULL CONTEXT FOR OPENAI
 
         # --- C. BUILD THE FULL CONTEXT FOR OPENAI ---
-        system_rules = (
-            f"{load_personality()}\n\n"
-            f"DATABASE CONTEXT:\n{retrieved_context}\n\n"
-            f"CRITICAL OVERRIDE INSTRUCTIONS:\n"
-            f"1. Lockouts: Use lockbox on bicycle rack (Code: 1234). If the key is lost, tell them to call the locksmith at +34 600 000 000. You MUST explicitly state that there is an exact €80 emergency fee. Do not say €50-€100.\n"
-            f"2. City Registration (Empadronamiento): Call it 'City Registration (Empadronamiento)' so international viewers understand. Tell them their signed contract is the ONLY document needed. Provide the raw link exactly like this: https://ajuntament.barcelona.cat/cita (Do not use Markdown [text](link) formatting). Remind them to tape their name to the mailbox.\n\n"
-            f"FINAL RULE: If the DATABASE CONTEXT above mentions 50-100 euros or a community manager, IGNORE IT COMPLETELY. Your core personality and override instructions are the absolute truth. Format your message with emojis and line breaks so it looks native to WhatsApp. If the user asks for local stores, use your Google Maps tool."
-        )
-        
+        # --- C. BUILD THE FULL CONTEXT FOR OPENAI ---
+        system_rules = f"""{load_personality()}
+
+DATABASE CONTEXT:
+{retrieved_context}
+
+CRITICAL OVERRIDE INSTRUCTIONS:
+1. Lockouts: You MUST state that they can use the "emergency lockbox" on the bicycle rack (Code: 1234). If the physical key is lost, tell them to call the locksmith at +34 600 000 000. You MUST explicitly write this exact sentence: "Please note there is an €80 emergency replacement fee." Do not omit the fee. Ignore any database mentions of €50-€100.
+2. Official City Registration (Empadronamiento): State that their signed contract is the ONLY document needed. Remind them to tape their full name to the mailbox.
+3. Link Formatting: You are completely FORBIDDEN from using Markdown hyperlinks. Do not use brackets like [this]. You must output the plain text URL on its own line exactly like this:
+https://ajuntament.barcelona.cat/cita
+4. Local Recommendations: If the user asks for local stores, restaurants, or businesses, you MUST use your search_google_maps tool to find them.
+
+FINAL INSTRUCTION: Ignore any old rules about a community manager. Use emojis to make it friendly for WhatsApp."""
+
         
         # Combine the system instructions with this specific guest's entire chat history
         messages_for_openai = [{"role": "system", "content": system_rules}] + conversation_memory[guest_phone]
