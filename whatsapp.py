@@ -125,7 +125,15 @@ def whatsapp_reply():
             conversation_memory[guest_phone] = conversation_memory[guest_phone][-10:]
             
         # C. BUILD THE FULL CONTEXT FOR OPENAI
-        system_rules = f"{load_personality()}\n\nHere are the property rules: \n{retrieved_context}\n\nIf the user asks about property rules, use ONLY the text above. If the user asks for local stores, restaurants, or businesses, use your Google Maps tool to find them."
+        # --- C. BUILD THE FULL CONTEXT FOR OPENAI ---
+        system_rules = (
+            f"{load_personality()}\n\n"
+            f"Here is the reference property context from the database:\n{retrieved_context}\n\n"
+            f"CRITICAL RULE: If any information in the database context conflicts with your core personality "
+            f"instructions (such as lockout fees, lockbox codes, or handling your empadronamiento), "
+            f"the core personality instructions MUST take absolute priority. Do not use old rules from the database.\n\n"
+            f"If the user asks for local stores, restaurants, or businesses, use your Google Maps tool to find them."
+        )
         
         # Combine the system instructions with this specific guest's entire chat history
         messages_for_openai = [{"role": "system", "content": system_rules}] + conversation_memory[guest_phone]
